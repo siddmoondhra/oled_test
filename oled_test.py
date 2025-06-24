@@ -1,21 +1,33 @@
-import board
-import busio
-import adafruit_ssd1306
-from PIL import Image, ImageDraw, ImageFont
+import RPi.GPIO as GPIO
+import time
+import config
 
-# Initialize I2C
-i2c = busio.I2C(board.SCL, board.SDA)
-oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3C)
+# Setup GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 
-# Clear display
-oled.fill(0)
-oled.show()
+# Setup buttons with pull-ups
+buttons = {
+    'up': config.BUTTON_UP,
+    'down': config.BUTTON_DOWN, 
+    'select': config.BUTTON_SELECT,
+    'back': config.BUTTON_BACK
+}
 
-# Draw text
-image = Image.new("1", (128, 64))
-draw = ImageDraw.Draw(image)
-draw.text((10, 30), "Hello, Pi Zero!", fill=255)
+for pin in buttons.values():
+    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-# Display
-oled.image(image)
-oled.show()
+print("Button test - press buttons or Ctrl+C to exit")
+print("Pin mapping:", buttons)
+
+try:
+    while True:
+        for name, pin in buttons.items():
+            if not GPIO.input(pin):  # Button pressed (LOW)
+                print(f"Button {name} pressed (GPIO {pin})")
+                time.sleep(0.3)  # Debounce
+        time.sleep(0.1)
+        
+except KeyboardInterrupt:
+    print("\nTest finished")
+    GPIO.cleanup()
